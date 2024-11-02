@@ -20,6 +20,10 @@ double distz;
 double current_ref_x ;
 double current_ref_y ;
 double current_ref_z;
+
+double test_x;
+double test_y;
+
 std::vector<double> ref_traj_x;
 std::vector<double> ref_traj_y;
 std::vector<double> ref_traj_z;
@@ -34,6 +38,7 @@ void ref_traj_cb(const nav_msgs::Path::ConstPtr& msg)
 
     size_refs =msg->poses.size();
 
+   cout<< "SIZE"<< size_refs<<endl;
 
    for (const auto& pose_stamped : msg->poses) {
         // Extract position data and push it to the respective trajectory vectors
@@ -41,9 +46,18 @@ void ref_traj_cb(const nav_msgs::Path::ConstPtr& msg)
        ref_traj_y.push_back(pose_stamped.pose.position.y);
         ref_traj_z.push_back(pose_stamped.pose.position.z);
     }
+      cout<< " ref_traj_x"<<  ref_traj_x[0]<<endl;
 
     ROS_INFO("Filled trajectory vectors with %zu points", ref_traj_x.size());
 
+// Using back() to get the most recent point
+if (!msg->poses.empty()) {
+    test_x = msg->poses.back().pose.position.x;
+    test_y = msg->poses.back().pose.position.y;
+    ROS_INFO("Most recent point: x = %f, y = %f", test_x, test_y);
+} else {
+    ROS_WARN("Path message is empty.");
+}
 
 
 }
@@ -188,8 +202,8 @@ void dist_data_cb(const std_msgs::Float64MultiArray::ConstPtr& msg)
     // Optional: You can log the values or process them further here
     ROS_INFO("Received and processed dist_Fx, dist_Fy, dist_Fz.");
 
-    std::cout<<"inside callback  "<<dist_Fx.data[0]<<std::endl;
-    std::cout<<msg->data[0]<<std::endl;
+   // std::cout<<"inside callback  "<<dist_Fx.data[0]<<std::endl;
+   // std::cout<<msg->data[0]<<std::endl;
 
     distx=msg->data[0];
     disty=msg->data[1];
@@ -197,8 +211,8 @@ void dist_data_cb(const std_msgs::Float64MultiArray::ConstPtr& msg)
     //distx=0.0;
     //disty=0.0;
 
-    std::cout<<"disty  "<<disty<<std::endl;
-    std::cout<<"distx  "<<distx<<std::endl;
+   // std::cout<<"disty  "<<disty<<std::endl;
+   // std::cout<<"distx  "<<distx<<std::endl;
 
 }
 
@@ -284,7 +298,7 @@ int main(int argc, char** argv)
     // ----------
 
 
-    ref_traj_sub = nh.subscribe<nav_msgs::Path>("/firefly1/neptune/sampled_traj2", 1, ref_traj_cb);
+    ref_traj_sub = nh.subscribe<nav_msgs::Path>("/firefly1/neptune/sampled_traj3", 1, ref_traj_cb);
 
     ref_position_sub = nh.subscribe<geometry_msgs::Vector3>("ref_trajectory/position", 1, ref_position_cb);
     ref_velocity_sub = nh.subscribe<geometry_msgs::Vector3>("ref_trajectory/velocity", 1, ref_velocity_cb);
@@ -311,6 +325,9 @@ int main(int argc, char** argv)
     nmpc_pred_traj_pub = nh.advertise<std_msgs::Float64MultiArray>("nmpc_predicted_trajectory", 1, true); 
     
     s_sdot_pub = nh.advertise<std_msgs::Float64MultiArray>("outer_nmpc_cmd/s_sdot", 1, true);
+
+    odom_point_pub = nh.advertise<geometry_msgs::PointStamped>("odom_point", 10);
+
 
     nmpc_struct.U_ref.resize(NMPC_NU);
     nmpc_struct.W.resize(NMPC_NY);
@@ -422,7 +439,7 @@ int main(int argc, char** argv)
                               };
 
              
-            cout<<"!!!!!!!!!!ref_traj_x[count_traj]"<<ref_traj_x[count_traj] <<endl;
+            cout<<"!!!!!!!!!!ref_traj_x[count_traj]"<<test_x <<endl;
             current_ref_x = ref_traj_x[count_traj];
             current_ref_y = ref_traj_y[count_traj];
             current_ref_z = ref_traj_z[count_traj];
@@ -434,8 +451,8 @@ int main(int argc, char** argv)
             }
 
            
-                    ref_trajectory = {current_ref_x,  //x
-                                     current_ref_y,  //y
+                    ref_trajectory = {test_x,  //x
+                                     test_y,  //y
                                      0.0,   //z
                                       0.0,   //u
                                       0.0,   //v
@@ -462,8 +479,8 @@ int main(int argc, char** argv)
             std::cout << "\n";
 
             
-            std::cout << "ref  yaw = "<< ref_yaw_rad << std::endl ;
-            std::cout << "current yaw = "<< angles.at(2) << std::endl ;
+           // std::cout << "ref  yaw = "<< ref_yaw_rad << std::endl ;
+           // std::cout << "current yaw = "<< angles.at(2) << std::endl ;
 
 
 
@@ -491,8 +508,8 @@ int main(int argc, char** argv)
 
 
            online_data.distFz = dist_Fx.data_zeros;
-           std::cout<<online_data.distFx[0]<<std::endl;
-           std::cout<<"online_data.distFx[29]:  "<<online_data.distFx[29]<<std::endl;
+           //std::cout<<online_data.distFx[0]<<std::endl;
+          // std::cout<<"online_data.distFx[29]:  "<<online_data.distFx[29]<<std::endl;
 
 
           //std::cout << "\033[1;31m" << "online_data = " << online_data.distFx[0] << " (sec)" << "\033[0m" << std::endl;
@@ -519,7 +536,7 @@ int main(int argc, char** argv)
                 exit(0);
             }
 
-            std::cout << "predicted dist x "<< online_data.distFx[0]<<endl;
+            //std::cout << "predicted dist x "<< online_data.distFx[0]<<endl;
            /// std::cout << "thrust input x1"<< nmpc_pc->nmpc_struct.x[1+9]<<endl;
 
             nmpc_pc->publish_pred_tarjectory(nmpc_pc->nmpc_struct);
@@ -529,6 +546,22 @@ int main(int argc, char** argv)
             print_flag_arm = 1;
             print_flag_altctl = 1;
 
+            
+            
+                    // Create a PointStamped message
+        geometry_msgs::PointStamped point_msg;
+        point_msg.header.stamp = ros::Time::now(); // Set the timestamp
+         point_msg.header.frame_id = "world";  // Set to your global frame here
+        point_msg.point.x = current_pos_att.at(0);
+        point_msg.point.y = current_pos_att.at(1);
+        point_msg.point.z = current_pos_att.at(2);
+
+        // Publish the PointStamped message
+        odom_point_pub.publish(point_msg);
+            
+            
+            
+            
             ros::spinOnce();
             rate.sleep();
             

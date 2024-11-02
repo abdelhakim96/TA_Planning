@@ -52,6 +52,7 @@ ros::Publisher nmpc_cmd_obj_pub;
 ros::Publisher nmpc_ctrl_pub;
 ros::Publisher s_sdot_pub;
 ros::Publisher nmpc_pred_traj_pub;
+ros::Publisher odom_point_pub;
 nmpc_struct_ nmpc_struct;
 online_data_struct_ online_data;
 
