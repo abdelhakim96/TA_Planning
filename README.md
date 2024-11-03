@@ -10,5 +10,7 @@ ros2 run ros1_bridge dynamic_bridge --bridge-all-topics
 
 
 ## Run neptune
+```bash
 cd ~/catkin_ws_neptune && bash src/neptune/neptune_single_benchmark.sh
+```
 
