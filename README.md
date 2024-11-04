@@ -22,3 +22,8 @@ rosnode kill -a
 tmux kill-server
 killall xterm
 ```
+## Build with Debug
+```bash
+catkin build --cmake-args -DCMAKE_BUILD_TYPE=Debug
+```
+
