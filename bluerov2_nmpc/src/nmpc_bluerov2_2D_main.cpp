@@ -27,9 +27,122 @@ double test_y;
 std::vector<double> ref_traj_x;
 std::vector<double> ref_traj_y;
 std::vector<double> ref_traj_z;
+
+std::vector<double> neptune_planner_x;
+std::vector<double> neptune_planner_y;
+std::vector<double> neptune_planner_z;
+
 int size_refs=10;
+int neptune_planner_size=10;
+
+
 int count_traj =0;
-//Neptune:
+int neptune_planner_count =0;
+std::vector<std::vector<double>> obstacle_centers;
+// Callback to handle incoming obstacle data
+void polyhedronArrayCallback(const decomp_ros_msgs::PolyhedronArray::ConstPtr& msg) {
+    obstacle_centers.clear();
+
+    for (const auto& polyhedron : msg->polyhedrons) {
+        double cx = 0.0, cy = 0.0, cz = 0.0;
+        int n_vertices = polyhedron.points.size();
+
+        // Calculate the center by averaging the vertices
+        for (const auto& vertex : polyhedron.points) {
+            cx += vertex.x;
+            cy += vertex.y;
+            cz += vertex.z;
+        }
+        cx /= n_vertices;
+        cy /= n_vertices;
+        cz /= n_vertices;
+
+        // Store the center of this polyhedron
+        obstacle_centers.push_back({cx, cy, cz});
+    }
+
+    ROS_INFO("Received %lu obstacles", obstacle_centers.size());
+}
+
+
+
+// Function to generate tether points linearly spaced between base and rov_pos
+void generate_tether_points_linear(std::vector<double> base, std::vector<double> rov_pos, int N_points, std::vector<std::vector<double>>& tether_points)
+{
+    // Calculate the difference in each axis
+    double dx = (rov_pos[0] - base[0]) / (N_points - 1);
+    double dy = (rov_pos[1] - base[1]) / (N_points - 1);
+    double dz = (rov_pos[2] - base[2]) / (N_points - 1);
+
+    // Add base as the starting point
+    tether_points.push_back(base);
+
+    // Generate intermediate points
+    for (int i = 1; i < N_points - 1; i++)
+    {
+        std::vector<double> point(3);
+        point[0] = base[0] + i * dx;
+        point[1] = base[1] + i * dy;
+        point[2] = base[2] + i * dz;
+        tether_points.push_back(point);
+    }
+
+    // Add rov_pos as the final point
+    tether_points.push_back(rov_pos);
+}
+
+
+
+// Function to find the closest obstacle to the ROV position
+std::vector<double> findClosestObstacle(const std::vector<double>& rov_pos) {
+    double min_distance = std::numeric_limits<double>::max();
+    std::vector<double> closest_obstacle_center;
+
+    for (const auto& center : obstacle_centers) {
+        double distance = std::sqrt(
+            std::pow(center[0] - rov_pos[0], 2) +
+            std::pow(center[1] - rov_pos[1], 2) +
+            std::pow(center[2] - rov_pos[2], 2)
+        );
+
+        if (distance < min_distance) {
+            min_distance = distance;
+            closest_obstacle_center = center;
+        }
+    }
+
+    ROS_INFO("Closest obstacle at (%f, %f, %f) with distance %f",
+             closest_obstacle_center[0], closest_obstacle_center[1],
+             closest_obstacle_center[2], min_distance);
+
+    return closest_obstacle_center;
+}
+
+
+
+//Neptune subscriber:
+void neptune_planner_traj_cb(const nav_msgs::Path::ConstPtr& msg)
+{
+    neptune_planner_count = 0;
+
+
+
+    neptune_planner_size =msg->poses.size();
+
+
+   for (const auto& pose_stamped : msg->poses) {
+        // Extract position data and push it to the respective trajectory vectors
+    neptune_planner_x.push_back(pose_stamped.pose.position.x);
+       neptune_planner_y.push_back(pose_stamped.pose.position.y);
+        neptune_planner_z.push_back(pose_stamped.pose.position.z);
+    }
+
+
+
+}
+
+
+
 void ref_traj_cb(const nav_msgs::Path::ConstPtr& msg)
 {
     count_traj = 0;
@@ -439,7 +552,6 @@ int main(int argc, char** argv)
                               };
 
              
-            cout<<"!!!!!!!!!!ref_traj_x[count_traj]"<<test_x <<endl;
             current_ref_x = ref_traj_x[count_traj];
             current_ref_y = ref_traj_y[count_traj];
             current_ref_z = ref_traj_z[count_traj];
@@ -506,17 +618,25 @@ int main(int argc, char** argv)
              std::fill(online_data.distFx.begin(), online_data.distFx.end(), distx);
              std::fill(online_data.distFy.begin(), online_data.distFy.end(), disty);
 
-
            online_data.distFz = dist_Fx.data_zeros;
-           //std::cout<<online_data.distFx[0]<<std::endl;
-          // std::cout<<"online_data.distFx[29]:  "<<online_data.distFx[29]<<std::endl;
-
-
-          //std::cout << "\033[1;31m" << "online_data = " << online_data.distFx[0] << " (sec)" << "\033[0m" << std::endl;
-          //std::cout << "\033[1;31m" << "online_data = " << online_data.distFy[0] << " (sec)" << "\033[0m" << std::endl;
-          //std::cout << "\033[1;31m" << "online_data = " << online_data.distFz[0] << " (sec)" << "\033[0m" << std::endl;
+    
 
           std::cout <<  dist_Fx.data[0] << " (sec)"<< std::endl;
+
+        //obstacle avoidance algorithm:
+
+        std::vector<double> rov_position = {current_pos_att.at(0), current_pos_att.at(1), 0.0};
+
+
+        if (!obstacle_centers.empty()) {
+             std::vector<double> closest_obs = findClosestObstacle(rov_position);
+
+                }
+
+
+                
+      
+
 
             nmpc_pc->nmpc_core(nmpc_struct,
                                nmpc_pc->nmpc_struct,

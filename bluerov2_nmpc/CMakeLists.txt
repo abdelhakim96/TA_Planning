@@ -17,7 +17,7 @@ else()
         message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++14 or C++11 support. Please use a different C++ compiler.")
 endif()
 
-find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs roslib nav_msgs tf)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs roslib nav_msgs decomp_ros_msgs tf)
 
 find_package(Eigen3 3.0.1 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIRS})

@@ -14,6 +14,7 @@
 #include <nav_msgs/Odometry.h> 
 #include <nmpc_bluerov2_2D.h>
 #include <geometry_msgs/Wrench.h>
+#include <decomp_ros_msgs/PolyhedronArray.h>
 
 #include <nav_msgs/Path.h>  // Include the correct header for nav_msgs::Path
 
