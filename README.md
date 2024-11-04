@@ -14,3 +14,11 @@ ros2 run ros1_bridge dynamic_bridge --bridge-all-topics
 cd ~/catkin_ws_neptune && bash src/neptune/neptune_single_benchmark.sh
 ```
 
+
+
+## Kill nodes
+```bash
+rosnode kill -a
+tmux kill-server
+killall xterm
+```
