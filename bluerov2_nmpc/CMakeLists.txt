@@ -107,5 +107,3 @@ target_link_libraries(bluerov2_nmpc ${PROJECT_NAME}_LIBRARY ${catkin_LIBRARIES})
 
 catkin_install_python(PROGRAMS scripts/thrust_allocator.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-
