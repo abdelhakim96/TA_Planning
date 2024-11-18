@@ -11,7 +11,7 @@ ros2 run ros1_bridge dynamic_bridge --bridge-all-topics
 
 ## Run neptune
 ```bash
-cd ~/catkin_ws_neptune && bash src/neptune/neptune_single_benchmark.sh
+cd ~/catkin_ws && bash src/neptune/neptune_single_benchmark.sh
 ```
 
 
@@ -27,3 +27,8 @@ killall xterm
 catkin build --cmake-args -DCMAKE_BUILD_TYPE=Debug
 ```
 
+
+## Run eampc
+```bash
+cd ~/catkin_ws && bash src/eampc/run_eampc.sh
+```
