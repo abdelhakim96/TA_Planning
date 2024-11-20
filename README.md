@@ -12,6 +12,8 @@ ros2 run ros1_bridge dynamic_bridge --bridge-all-topics
 ## Run neptune
 ```bash
 cd ~/tether_planning_ws && bash src/neptune/neptune_single_benchmark.sh
+cd ~/tether_planning_ws && bash src/neptune/eampc_pillars.sh
+
 ```
 
 
